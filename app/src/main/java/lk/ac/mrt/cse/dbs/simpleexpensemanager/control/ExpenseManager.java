@@ -16,6 +16,9 @@
 
 package lk.ac.mrt.cse.dbs.simpleexpensemanager.control;
 
+import android.content.Context;
+import android.support.v7.app.AppCompatActivity;
+
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
@@ -33,7 +36,7 @@ import lk.ac.mrt.cse.dbs.simpleexpensemanager.data.model.Transaction;
  * The ExpenseManager acts as the mediator when performing transactions. This is an abstract class with an abstract
  * method to setup the DAO objects depending on the implementation.
  */
-public abstract class ExpenseManager implements Serializable {
+public abstract class ExpenseManager extends AppCompatActivity implements Serializable {
     private AccountDAO accountsHolder;
     private TransactionDAO transactionsHolder;
 
