@@ -1,12 +1,5 @@
 package lk.ac.mrt.cse.dbs.simpleexpensemanager.data.impl;
 
-import android.content.ContentValues;
-import android.content.Context;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
-import android.support.annotation.Nullable;
-import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,25 +11,27 @@ import lk.ac.mrt.cse.dbs.simpleexpensemanager.data.AccountDAO;
 import lk.ac.mrt.cse.dbs.simpleexpensemanager.data.exception.InvalidAccountException;
 import lk.ac.mrt.cse.dbs.simpleexpensemanager.data.model.Account;
 import lk.ac.mrt.cse.dbs.simpleexpensemanager.data.model.ExpenseType;
+import lk.ac.mrt.cse.dbs.simpleexpensemanager.data.DBHelper.DBHelper;
 
-public class PersistentMemoryAccountDAO extends SQLiteOpenHelper implements AccountDAO {
-    private static final String DATABASE = "accounts";
-    private static final String TABLE_NAME = "accountDetails";
+public class PersistentMemoryAccountDAO  implements AccountDAO {
 
-    private final Map<String, Account> accounts;
+    private  Map<String, Account> accounts;
+    private DBHelper dbHelper;
 
-    public PersistentMemoryAccountDAO(@Nullable Context context) {
-        super(context, DATABASE +".db",null,1);
-        this.accounts = getAccounts();
+    public PersistentMemoryAccountDAO(DBHelper dbHelper) {
+        this.dbHelper = dbHelper;
+        this.accounts = this.dbHelper.getAccounts();
     }
 
     @Override
     public List<String> getAccountNumbersList() {
+        this.accounts = this.dbHelper.getAccounts();
         return new ArrayList<>(accounts.keySet());
     }
 
     @Override
     public List<Account> getAccountsList() {
+        this.accounts = this.dbHelper.getAccounts();
         return new ArrayList<>(accounts.values());
     }
 
@@ -51,21 +46,12 @@ public class PersistentMemoryAccountDAO extends SQLiteOpenHelper implements Acco
 
     @Override
     public void addAccount(Account account) {
-        accounts.put(account.getAccountNo(), account);
-
-        SQLiteDatabase db = this.getWritableDatabase();
-
-        ContentValues cv = new ContentValues();
-        cv.put("accountNo", account.getAccountNo());
-        cv.put("bankName", account.getBankName());
-        cv.put("accountHolderName", account.getAccountHolderName());
-        cv.put("balance", account.getBalance());
-
-        long insert = db.insert(TABLE_NAME, null, cv);
-        if( insert == -1) {
-            //return false;
-        }else{
-            //return true;
+        if(!this.accounts.containsKey(account.getAccountNo())){
+            accounts.put(account.getAccountNo(), account);
+            this.dbHelper.addAccount(account);
+        }
+        else {
+            System.out.println("Account already exists");
         }
     }
 
@@ -95,39 +81,5 @@ public class PersistentMemoryAccountDAO extends SQLiteOpenHelper implements Acco
                 break;
         }
         accounts.put(accountNo, account);
-    }
-
-    @Override
-    public void onCreate(SQLiteDatabase db) {
-        db.execSQL("CREATE TABLE "+ TABLE_NAME +" (accountNo TEXT PRIMARY KEY, bankName TEXT, accountHolderName TEXT, balance REAL)");
-
-    }
-
-    @Override
-    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
-    }
-    public Map<String,Account> getAccounts(){
-        Map<String, Account> accounts = new HashMap<>();
-        String query = "SELECT * FROM " + TABLE_NAME;
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor result = db.rawQuery(query, null);
-        if(result.moveToFirst()) {
-            do {
-                String accountNo = result.getString(0);
-                String bankName = result.getString(1);
-                String accountHolderName = result.getString(2);
-                double balance = result.getDouble(3);
-
-                Account account = new Account(accountNo, bankName, accountHolderName, balance);
-                accounts.put(account.getAccountNo(), account);
-
-            } while ( result.moveToNext() );
-        } else {
-
-        }
-        result.close();
-        db.close();
-        return accounts;
     }
 }
